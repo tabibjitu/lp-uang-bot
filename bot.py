@@ -26,9 +26,15 @@ scope = [
 
 creds_json = json.loads(os.environ.get("GOOGLE_CREDENTIALS"))
 
+import json
+from oauth2client.service_account import ServiceAccountCredentials
+
+creds_dict = json.loads(os.environ["GOOGLE_CREDS"])
+
 creds = ServiceAccountCredentials.from_json_keyfile_dict(
-    creds_json, scope
+    creds_dict, scope
 )
+
 
 client = gspread.authorize(creds)
 sheet = client.open(SHEET_NAME).sheet1
@@ -200,3 +206,4 @@ app.add_handler(CommandHandler("laporan", laporan_bulan))
 
 print("🤖 Bot keuangan berjalan...")
 app.run_polling()
+
