@@ -1,6 +1,7 @@
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 import os
+import json
 
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
@@ -9,25 +10,29 @@ from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 
 # ================= CONFIG =================
-TOKEN = "8599799129:AAGVh_c_z-N9O50R3fMjgP9K4bWXoa_EQFk"
+TOKEN = os.environ.get("BOT_TOKEN")  # dari Render ENV
 SHEET_NAME = "Keuangan Keluarga"
 
 # Telegram ID kamu & istri
 ALLOWED_USERS = [1009390463, 2031339484]
 # =========================================
 
-# ===== GOOGLE SHEETS =====
+
+# ===== GOOGLE SHEETS via ENV =====
 scope = [
     "https://spreadsheets.google.com/feeds",
     "https://www.googleapis.com/auth/drive"
 ]
 
-creds = ServiceAccountCredentials.from_json_keyfile_name(
-    "service_account.json", scope
+creds_json = json.loads(os.environ.get("GOOGLE_CREDENTIALS"))
+
+creds = ServiceAccountCredentials.from_json_keyfile_dict(
+    creds_json, scope
 )
+
 client = gspread.authorize(creds)
 sheet = client.open(SHEET_NAME).sheet1
-# ========================
+# =========================================
 
 
 def user_allowed(update: Update):
@@ -100,14 +105,12 @@ async def saldo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     data = sheet.get_all_records()
 
-    total_masuk = 0
-    total_keluar = 0
-
-    for r in data:
-        if r.get("Jenis") == "Masuk":
-            total_masuk += r.get("Jumlah", 0)
-        elif r.get("Jenis") == "Keluar":
-            total_keluar += r.get("Jumlah", 0)
+    total_masuk = sum(
+        r.get("Jumlah", 0) for r in data if r.get("Jenis") == "Masuk"
+    )
+    total_keluar = sum(
+        r.get("Jumlah", 0) for r in data if r.get("Jenis") == "Keluar"
+    )
 
     saldo = total_masuk - total_keluar
 
@@ -120,10 +123,7 @@ async def laporan_bulan(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     data = sheet.get_all_records()
 
-    # Default: bulan ini
     bulan = datetime.now().strftime("%Y-%m")
-
-    # Jika user ketik: /laporan 2026-01
     if context.args:
         bulan = context.args[0]
 
