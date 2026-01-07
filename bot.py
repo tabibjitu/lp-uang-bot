@@ -17,16 +17,16 @@ ALLOWED_USERS = [1009390463, 2031339484]
 # =========================================
 
 # ===== GOOGLE SHEETS AUTH (BASE64) =====
+import json
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+
 scope = [
     "https://spreadsheets.google.com/feeds",
     "https://www.googleapis.com/auth/drive"
 ]
 
-creds_json = base64.b64decode(
-    os.environ["GOOGLE_CREDS_B64"]
-).decode("utf-8")
-
-creds_dict = json.loads(creds_json)
+creds_dict = json.loads(os.environ["GOOGLE_CREDS"])
 
 creds = ServiceAccountCredentials.from_json_keyfile_dict(
     creds_dict, scope
@@ -34,6 +34,7 @@ creds = ServiceAccountCredentials.from_json_keyfile_dict(
 
 client = gspread.authorize(creds)
 sheet = client.open(SHEET_NAME).sheet1
+
 # =========================================
 
 
@@ -162,3 +163,4 @@ app.add_handler(CommandHandler("laporan", laporan_bulan))
 
 print("🤖 Bot keuangan berjalan...")
 app.run_polling()
+
